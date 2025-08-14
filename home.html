@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+<title>Dopamine Buddy</title>
+<style>
+  html, body {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #2c2c2c;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: sans-serif;
+    color: white;
+    touch-action: none;
+  }
+  #overlay {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 20px;
+    pointer-events: none;
+  }
+  .quote {
+    opacity: 0;
+    font-size: 1.5em;
+    transition: opacity 1s ease-in;
+  }
+  .show-quote {
+    opacity: 1;
+  }
+  .ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    animation: ripple 1s ease-out forwards;
+    pointer-events: none;
+  }
+  @keyframes ripple {
+    to {
+      transform: scale(15);
+      opacity: 0;
+    }
+  }
+  .gallery {
+    display: none;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+  }
+  .gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    position: absolute;
+    top: 0;
+    left: 100%;
+    transition: left 0.5s ease;
+  }
+  .gallery img.active {
+    left: 0;
+  }
+  .gallery img.prev {
+    left: -100%;
+  }
+</style>
+</head>
+<body>
+<div id="overlay"></div>
+<div class="gallery" id="gallery"></div>
+<script>
+  const overlay = document.getElementById('overlay');
+  const holdTime = 15000; // 15 sec
+  let holdStart = null;
+  let holding = false;
+  let animationFrame;
+  const quotes = [
+    "You are stronger than your urges.",
+    "Discipline is the bridge between goals and accomplishment.",
+    "Every urge you resist makes you stronger.",
+    "Your future self thanks you.",
+    "One small victory at a time."
+  ];function startHold(x, y) { if (holding) return; holding = true; holdStart = Date.now(); animateBackground(x, y); }
+
+function animateBackground(x, y) { const now = Date.now(); const elapsed = now - holdStart; const progress = Math.min(elapsed / holdTime, 1); const eased = progress * progress; // ease-in const startColor = {r: 44, g: 44, b: 44}; const endColor = {r: 255, g: 145, b: 77}; const r = Math.round(startColor.r + (endColor.r - startColor.r) * eased); const g = Math.round(startColor.g + (endColor.g - startColor.g) * eased); const b = Math.round(startColor.b + (endColor.b - startColor.b) * eased); document.body.style.backgroundColor = rgb(${r}, ${g}, ${b});
+
+if (progress >= 1) {
+  successHold(x, y);
+} else if (holding) {
+  animationFrame = requestAnimationFrame(() => animateBackground(x, y));
+}
+
+}
+
+function cancelHold() { if (!holding) return; holding = false; cancelAnimationFrame(animationFrame); document.body.style.transition = 'background-color 0.3s ease-out'; document.body.style.backgroundColor = '#2c2c2c'; }
+
+function successHold(x, y) { holding = false; createRipple(x, y); showQuote(); setTimeout(showGallery, 5000); }
+
+function createRipple(x, y) { const ripple = document.createElement('div'); ripple.className = 'ripple'; ripple.style.left = ${x - 50}px; ripple.style.top = ${y - 50}px; ripple.style.width = '100px'; ripple.style.height = '100px'; document.body.appendChild(ripple); setTimeout(() => ripple.remove(), 1000); }
+
+function showQuote() { const q = document.createElement('div'); q.className = 'quote'; q.textContent = quotes[Math.floor(Math.random() * quotes.length)]; overlay.appendChild(q); setTimeout(() => q.classList.add('show-quote'), 50); }
+
+function showGallery() { overlay.innerHTML = ''; const gallery = document.getElementById('gallery'); gallery.style.display = 'block'; const images = [ 'https://picsum.photos/id/1018/1080/1920', 'https://picsum.photos/id/1015/1080/1920', 'https://picsum.photos/id/1016/1080/1920' ]; gallery.innerHTML = ''; images.forEach((src, i) => { const img = document.createElement('img'); img.src = src; if (i === 0) img.classList.add('active'); gallery.appendChild(img); }); let index = 0; let startX = 0; gallery.addEventListener('touchstart', e => startX = e.touches[0].clientX); gallery.addEventListener('touchend', e => { let diff = e.changedTouches[0].clientX - startX; const imgs = gallery.querySelectorAll('img'); if (diff > 50) { imgs[index].classList.remove('active'); imgs[index].classList.add('prev'); index = (index - 1 + imgs.length) % imgs.length; imgs[index].classList.remove('prev'); imgs[index].classList.add('active'); } else if (diff < -50) { imgs[index].classList.remove('active'); imgs[index].classList.add('prev'); index = (index + 1) % imgs.length; imgs[index].classList.remove('prev'); imgs[index].classList.add('active'); } }); }
+
+document.addEventListener('mousedown', e => startHold(e.clientX, e.clientY)); document.addEventListener('mouseup', cancelHold); document.addEventListener('touchstart', e => { const touch = e.touches[0]; startHold(touch.clientX, touch.clientY); }, {passive: true}); document.addEventListener('touchend', cancelHold); </script>
+
+</body>
+</html>
